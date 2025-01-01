@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
 #include <algorithm>
 #include <string>
 #include <map>
+#include <iomanip>
 
 using namespace std;
 
@@ -36,6 +38,30 @@ void calculateSuffixSum(vector<Node> &nodes, vector<double> &suffixSum)
     }
 }
 
+double getEntropy(vector<Node> &nodes)
+{
+    double entropy = 0;
+    for (const auto &node : nodes)
+    {
+        entropy += node.probability * log2(1 / node.probability);
+    }
+    return entropy;
+}
+
+double getAverageLength(vector<Node> &nodes)
+{
+    double averageLength = 0;
+    for (const auto &node : nodes)
+    {
+        averageLength += node.probability * node.code.length();
+    }
+    return averageLength;
+}
+
+double getExpectedLength(double prob) {
+    return -log2(prob);
+}
+
 // Hàm thực hiện thuật toán Shannon-Fano để mã hóa các ký tự
 void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefixSum, vector<double> &suffixSum)
 {
@@ -43,11 +69,16 @@ void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefix
     if (start >= end)
         return;
 
+    // cout << "--------------------------------------------------------" << endl;
+    // cout << "Doan: " << start << " -> " << end << endl;
+
     // Tính tổng xác suất của các phần tử trong đoạn hiện tại
     double total = prefixSum[end] - (start > 0 ? prefixSum[start - 1] : 0);
+    // cout << "Tong xac suat: " << total << endl;
 
     // Tìm điểm chia để tổng xác suất hai nhóm gần bằng nhau nhất
     double half = total / 2;
+    // cout << "Nua tong xac suat: " << half << endl;
     int split = start;
     double minDiff = total;
     for (int i = start; i < end; i++)
@@ -61,6 +92,8 @@ void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefix
             split = i;
         }
     }
+    // cout << "Diem chia: " << split << endl;
+    // cout << "2 nua tong tai diem chia: " << prefixSum[split] - (start > 0 ? prefixSum[start - 1] : 0) << " va " << suffixSum[split + 1] << endl;
 
     // Gán mã 0 cho nhóm bên trái (có xác suất lớn hơn)
     for (int i = start; i <= split; i++)
@@ -80,52 +113,62 @@ void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefix
 
 int main()
 {
-    int q;
-    cout << "Nhap so luong tin q (<12): ";
-    cin >> q;
-    if (q >= 12)
+    map<string, int> frequencies;
+    string symbol;
+    int frequency;
+
+    cout << "Nhap ky hieu va tan suat (ket thuc voi EOF):" << endl;
+    while (cin >> symbol >> frequency)
     {
-        cout << "So luong tin phai nho hon 12." << endl;
-        return 1;
+        frequencies[symbol] = frequency;
     }
 
-    vector<Node> nodes(q);
-    vector<double> prefixSum(q);
-    vector<double> suffixSum(q);
-
-    double totalProbability = 0;
-
-    for (int i = 0; i < q; i++)
+    int totalFrequency = 0;
+    for (const auto &pair : frequencies)
     {
-        cout << "Nhap tin thu " << i + 1 << ": ";
-        cin >> nodes[i].symbol;
-        cout << "Nhap xac suat cua tin " << nodes[i].symbol << ": ";
-        cin >> nodes[i].probability;
-        if (nodes[i].probability >= 1)
-        {
-            cout << "Xac suat cua moi tin phai nho hon 1." << endl;
-            return 1;
-        }
-        totalProbability += nodes[i].probability;
+        totalFrequency += pair.second;
     }
 
-    if (totalProbability - 1.0 > 1e-6)
+    vector<Node> nodes;
+    for (const auto &pair : frequencies)
     {
-        cout << "Tong xac suat cac tin phai bang 1." << endl;
-        return 1;
+        nodes.push_back({pair.first, static_cast<double>(pair.second) / totalFrequency, ""});
     }
 
     sort(nodes.begin(), nodes.end(), compare);
+
+    vector<double> prefixSum(nodes.size());
+    vector<double> suffixSum(nodes.size());
     calculatePrefixSum(nodes, prefixSum);
     calculateSuffixSum(nodes, suffixSum);
+    // cout << "Prefix sum: ";
+    // for (auto i: prefixSum)
+    // {
+    //     cout << i << " ";
+    // }
+    // cout << endl;
+    // cout << "Suffix sum: ";
+    // for (auto i: suffixSum)
+    // {
+    //     cout << i << " ";
+    // }
+    cout << endl;
 
-    shannonFano(nodes, 0, q - 1, prefixSum, suffixSum);
-
+    shannonFano(nodes, 0, nodes.size() - 1, prefixSum, suffixSum);
+    
     cout << "Bang ma Shannon-Fano:" << endl;
+
+    cout << left << setw(10) << "Ky hieu" << setw(10) << "Tan suat" << setw(15) << "Xac suat" << setw(10) << "Ma" << endl;
+    cout << "--------------------------------------------------------" << endl;
+
     for (const auto &node : nodes)
     {
-        cout << "Tin: " << node.symbol << " - Ma: " << node.code << endl;
+        cout << left << setw(10) << node.symbol << setw(10) << frequencies[node.symbol] << setw(15) << node.probability << setw(10) << node.code << endl;
     }
+
+    cout << "--------------------------------------------------------" << endl;
+    cout << "Entropy: " << getEntropy(nodes) << endl;
+    cout << "Do dai trung binh: " << getAverageLength(nodes) << endl << endl;
 
     return 0;
 }
