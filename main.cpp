@@ -27,8 +27,17 @@ void calculatePrefixSum(vector<Node> &nodes, vector<double> &prefixSum)
     }
 }
 
+void calculateSuffixSum(vector<Node> &nodes, vector<double> &suffixSum)
+{
+    suffixSum[nodes.size() - 1] = nodes[nodes.size() - 1].probability;
+    for (int i = nodes.size() - 2; i >= 0; i--)
+    {
+        suffixSum[i] = suffixSum[i + 1] + nodes[i].probability;
+    }
+}
+
 // Hàm thực hiện thuật toán Shannon-Fano để mã hóa các ký tự
-void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefixSum)
+void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefixSum, vector<double> &suffixSum)
 {
     // Điều kiện dừng: nếu chỉ còn 1 phần tử hoặc không còn phần tử nào
     if (start >= end)
@@ -39,15 +48,17 @@ void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefix
 
     // Tìm điểm chia để tổng xác suất hai nhóm gần bằng nhau nhất
     double half = total / 2;
-    double acc = 0;
     int split = start;
-    for (int i = start; i <= end; i++)
+    double minDiff = total;
+    for (int i = start; i < end; i++)
     {
-        acc = prefixSum[i] - (start > 0 ? prefixSum[start - 1] : 0);
-        if (acc >= half)
+        double leftSum = prefixSum[i] - (start > 0 ? prefixSum[start - 1] : 0);
+        double rightSum = suffixSum[i + 1];
+        double diff = abs(leftSum - rightSum);
+        if (diff < minDiff)
         {
+            minDiff = diff;
             split = i;
-            break;
         }
     }
 
@@ -63,8 +74,8 @@ void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefix
     }
 
     // Đệ quy thực hiện tiếp cho hai nhóm con
-    shannonFano(nodes, start, split, prefixSum);
-    shannonFano(nodes, split + 1, end, prefixSum);
+    shannonFano(nodes, start, split, prefixSum, suffixSum);
+    shannonFano(nodes, split + 1, end, prefixSum, suffixSum);
 }
 
 int main()
@@ -80,6 +91,7 @@ int main()
 
     vector<Node> nodes(q);
     vector<double> prefixSum(q);
+    vector<double> suffixSum(q);
 
     double totalProbability = 0;
 
@@ -105,8 +117,9 @@ int main()
 
     sort(nodes.begin(), nodes.end(), compare);
     calculatePrefixSum(nodes, prefixSum);
+    calculateSuffixSum(nodes, suffixSum);
 
-    shannonFano(nodes, 0, q - 1, prefixSum);
+    shannonFano(nodes, 0, q - 1, prefixSum, suffixSum);
 
     cout << "Bang ma Shannon-Fano:" << endl;
     for (const auto &node : nodes)
