@@ -1,0 +1,15 @@
+Nhap ky hieu va tan suat (ket thuc voi EOF):
+
+Bang ma Shannon-Fano:
+Ky hieu   Tan suat  Xac suat       Ma        
+--------------------------------------------------------
+G         20        0.333333       00        
+H         15        0.25           01        
+I         10        0.166667       10        
+J         7         0.116667       110       
+K         5         0.0833333      1110      
+L         3         0.05           1111      
+--------------------------------------------------------
+Entropy: 2.3356
+Do dai trung binh: 2.38333
+
