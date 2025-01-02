@@ -29,15 +29,6 @@ void calculatePrefixSum(vector<Node> &nodes, vector<double> &prefixSum)
     }
 }
 
-void calculateSuffixSum(vector<Node> &nodes, vector<double> &suffixSum)
-{
-    suffixSum[nodes.size() - 1] = nodes[nodes.size() - 1].probability;
-    for (int i = nodes.size() - 2; i >= 0; i--)
-    {
-        suffixSum[i] = suffixSum[i + 1] + nodes[i].probability;
-    }
-}
-
 double getEntropy(vector<Node> &nodes)
 {
     double entropy = 0;
@@ -63,7 +54,7 @@ double getExpectedLength(double prob) {
 }
 
 // Hàm thực hiện thuật toán Shannon-Fano để mã hóa các ký tự
-void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefixSum, vector<double> &suffixSum)
+void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefixSum)
 {
     // Điều kiện dừng: nếu chỉ còn 1 phần tử hoặc không còn phần tử nào
     if (start >= end)
@@ -84,8 +75,8 @@ void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefix
     for (int i = start; i < end; i++)
     {
         double leftSum = prefixSum[i] - (start > 0 ? prefixSum[start - 1] : 0);
-        double rightSum = suffixSum[i + 1];
-        double diff = abs(leftSum - rightSum);
+        // double rightSum = suffixSum[i + 1];
+        double diff = abs(leftSum - half);
         if (diff < minDiff)
         {
             minDiff = diff;
@@ -107,8 +98,8 @@ void shannonFano(vector<Node> &nodes, int start, int end, vector<double> &prefix
     }
 
     // Đệ quy thực hiện tiếp cho hai nhóm con
-    shannonFano(nodes, start, split, prefixSum, suffixSum);
-    shannonFano(nodes, split + 1, end, prefixSum, suffixSum);
+    shannonFano(nodes, start, split, prefixSum);
+    shannonFano(nodes, split + 1, end, prefixSum);
 }
 
 int main()
@@ -138,23 +129,10 @@ int main()
     sort(nodes.begin(), nodes.end(), compare);
 
     vector<double> prefixSum(nodes.size());
-    vector<double> suffixSum(nodes.size());
     calculatePrefixSum(nodes, prefixSum);
-    calculateSuffixSum(nodes, suffixSum);
-    // cout << "Prefix sum: ";
-    // for (auto i: prefixSum)
-    // {
-    //     cout << i << " ";
-    // }
-    // cout << endl;
-    // cout << "Suffix sum: ";
-    // for (auto i: suffixSum)
-    // {
-    //     cout << i << " ";
-    // }
     cout << endl;
 
-    shannonFano(nodes, 0, nodes.size() - 1, prefixSum, suffixSum);
+    shannonFano(nodes, 0, nodes.size() - 1, prefixSum);
     
     cout << "Bang ma Shannon-Fano:" << endl;
 
